@@ -276,7 +276,7 @@ function unequip(slot){if(!s.equipment[slot])return;s.inventory.push(s.equipment
 function allocate(key){if(!passives[key]||s.passivePoints<=0||s.passives[key]>=10)return;s.passives[key]++;s.passivePoints--;s.flags.passive=1;recalc();questCheck();log(`Талант улучшен: ${passives[key].title} ${s.passives[key]}/10.`);save();render();toast(`Талант «${passives[key].title}» улучшен`);}
 function listItem(itemId){const i=s.inventory.findIndex(x=>x.id===itemId);if(i<0)return;const item=s.inventory[i],answer=prompt(`Цена в золоте за «${item.name}»:`,String(Math.max(5,item.power*7)));if(answer===null)return;const price=Math.floor(Number(answer));if(!Number.isFinite(price)||price<1||price>1e8){toast('Укажи корректную цену');return;}s.inventory.splice(i,1);s.market.push({id:uid(),item,price,seller:s.name});save();render();toast('Предмет выставлен на локальный рынок');}
 function buy(id){const k=s.market.findIndex(x=>x.id===id);if(k<0)return;const l=s.market[k];if(s.gold<l.price){toast('Недостаточно золота');return;}s.gold-=l.price;s.inventory.push(l.item);s.market.splice(k,1);log(`Куплено на рынке: ${l.item.name}`);save();render();toast('Покупка совершена');}
-function reset(){if(!confirm('Сбросить весь локальный прогресс? Это нельзя отменить.'))return;localStorage.removeItem(KEY);s=fresh(authed?authName:undefined);save(true);render();$('startscreen').classList.remove('hide');$('nameInput').value=s.name;}
+function reset(){if(!confirm('Сбросить весь локальный прогресс? Это нельзя отменить.'))return;localStorage.removeItem(KEY);s=fresh(authed?authName:undefined);save(true);render();$('nameInput').value=s.name;}
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+b.dataset.tab));}));
 $('skill').addEventListener('change',e=>{s.skill=e.target.value;save();render();toast('Боевой навык изменён');});$('buildSkill').addEventListener('change',e=>{s.skill=e.target.value;save();render();toast('Стиль боя обновлён');});
 $('inventorySearch').addEventListener('input',renderInventory);$('inventoryFilter').addEventListener('change',renderInventory);$('inventorySort').addEventListener('change',renderInventory);document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.tab==='gear'&&(s.newItems||[]).length){s.newItems=[];save();renderInventory();}}));$('chatForm').addEventListener('submit',e=>{e.preventDefault();const input=$('chatInput'),text=input.value.trim();if(text){s.chat.push({name:s.name,text:text.slice(0,180)});s.chat=s.chat.slice(-40);input.value='';save();render();}});
@@ -292,6 +292,7 @@ async function boot(){
  if(authed)load(raw===null?'null':raw);else load();
  if(authed){s.name=authName;$('nameInput').value=authName;$('nameInput').disabled=true;}
  recalc();if(!Number.isFinite(s.enemyHp)||s.enemyHp<=0)s.enemyHp=enemyMaxHp(s.target);render();if(!authed)$('nameInput').value=s.name;
+ $('startscreen').classList.add('hide');if(!timer)timer=setInterval(attack,950);
 }
 boot();
 })();</script></body></html>
