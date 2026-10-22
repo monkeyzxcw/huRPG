@@ -282,6 +282,12 @@ $('skill').addEventListener('change',e=>{s.skill=e.target.value;save();render();
 $('inventorySearch').addEventListener('input',renderInventory);$('inventoryFilter').addEventListener('change',renderInventory);$('inventorySort').addEventListener('change',renderInventory);document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.tab==='gear'&&(s.newItems||[]).length){s.newItems=[];save();renderInventory();}}));$('chatForm').addEventListener('submit',e=>{e.preventDefault();const input=$('chatInput'),text=input.value.trim();if(text){s.chat.push({name:s.name,text:text.slice(0,180)});s.chat=s.chat.slice(-40);input.value='';save();render();}});
 $('startBtn').addEventListener('click',()=>{const name=authed?authName:($('nameInput').value.trim().replace(/[<>]/g,'').slice(0,18)||'Wanderer');if(s.kills===0&&s.inventory.length===0&&s.level===1)s.name=name;else if(name!==s.name){if(!confirm('Сменить имя текущего персонажа?'))return;s.name=name;}save();render();$('startscreen').classList.add('hide');if(!timer)timer=setInterval(attack,950);});$('resetBtn').addEventListener('click',reset);
 async function boot(){
+ $('startscreen').classList.add('hide');
+ try{ await boot2(); }catch(e){ console.error(e); const w=document.createElement('div');w.style.cssText='background:#3a1d1f;color:#ffb3b6;font:12px monospace;padding:8px 12px;position:fixed;left:0;right:0;top:0;z-index:99';w.textContent='Ошибка запуска: '+(e&&e.message||e);document.body.appendChild(w); }
+ if(!s){s=fresh();recalc();}
+ if(!timer)timer=setInterval(attack,950);
+}
+async function boot2(){
  const q=new URLSearchParams(location.search);let raw;
  if(API_URL&&q.has('hu_user_id')&&q.has('hu_hash')){
   const sb=$('startBtn');sb.disabled=true;sb.textContent='Вход через huEVO…';
