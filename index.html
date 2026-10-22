@@ -199,11 +199,12 @@ function normaliseItem(i){if(!i)return i;if(!i.slot||!slots[i.slot])i.slot='weap
 const API_URL='https://huevo-lootbound.monkeyzxc1437.workers.dev';/* адрес Worker, например https://huevo-lootbound.имя.workers.dev */
 const SID=(window.crypto&&crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now()).replace(/[^\w-]/g,'').slice(0,36);
 let authed=false,authName='',authAvatar='',token='',lastRemote=0,remoteTimer=null;
-function cloud(ok,msg){let e=document.getElementById('cloud');if(!e){e=document.createElement('div');e.id='cloud';e.style.cssText='position:fixed;right:8px;bottom:6px;font-size:10px;z-index:5;padding:3px 6px;border-radius:4px;background:#111214cc';document.body.appendChild(e);}e.textContent=msg||(ok?'☁ сохранено на сервере':'⚠ нет связи с сервером');e.style.color=ok?'#65d98b':'#ff575e';}
-async function api(path,opt={}){const r=await fetch(API_URL+path,{...opt,headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})}});const j=await r.json();if(!j.ok)throw new Error(j.error||'api');return j;}
+function cloud(ok,msg){let e=document.getElementById('cloud');if(!e){e=document.createElement('div');e.id='cloud';e.style.cssText='position:fixed;right:8px;bottom:6px;font-size:10px;z-index:5;padding:3px 6px;border-radius:4px;background:#111214cc;max-width:70vw;white-space:normal;text-align:right';document.body.appendChild(e);}e.textContent=msg||(ok?'☁ сохранено на сервере':'⚠ нет связи с сервером');e.style.color=ok?'#65d98b':'#ff575e';}
+async function api(path,opt={}){const r=await fetch(API_URL+path,{...opt,headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})}});let j;try{j=await r.json();}catch{const x=new Error('http_'+r.status);throw x;}if(!j.ok){const x=new Error(j.error||'api');x.detail=j.detail;throw x;}return j;}
+const why=e=>String((e&&e.message)||e)+(e&&e.detail?' — '+e.detail:'');
 let inflight=false,pending=false,forceNext=false,locked=false,lb=null;
 function pushRemote(force){if(!authed||locked)return;const now=Date.now();if(force===false&&now-lastRemote<8000){if(!remoteTimer)remoteTimer=setTimeout(()=>{remoteTimer=null;pushRemote(true);},8000-(now-lastRemote));return;}if(inflight){pending=true;return;}lastRemote=now;inflight=true;const body=JSON.stringify(s);api('/save',{method:'PUT',body,keepalive:body.length<60000})
-.then(j=>{s.rev=j.rev;cloud(true);}).catch(e=>{if(e&&e.message==='stale'){locked=true;clearInterval(timer);cloud(false,'⚠ Игра открыта в другой вкладке. Обнови страницу.');}else cloud(false);}).finally(()=>{inflight=false;if(pending){pending=false;pushRemote(true);}});}
+.then(j=>{s.rev=j.rev;cloud(true);}).catch(e=>{if(e&&e.message==='stale'){locked=true;clearInterval(timer);cloud(false,'⚠ Игра открыта в другой вкладке. Обнови страницу.');}else cloud(false,'⚠ нет связи с сервером: '+why(e));}).finally(()=>{inflight=false;if(pending){pending=false;pushRemote(true);}});}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pushRemote(true);});window.addEventListener('pagehide',()=>pushRemote(true));
 let storageOk=true;
 function readSave(){let raw=null;try{raw=localStorage.getItem(KEY);}catch{storageOk=false;}if(!raw&&String(window.name).startsWith('huevo:'))raw=window.name.slice(6);return raw;}
@@ -298,7 +299,7 @@ async function boot2(){
  if(API_URL&&q.has('hu_user_id')&&q.has('hu_hash')){
   const sb=$('startBtn');sb.disabled=true;sb.textContent='Вход через huEVO…';
   try{const r=await api('/auth',{method:'POST',body:JSON.stringify({query:location.search.slice(1)})});token=r.token;authName=String(r.user.name||'Игрок').replace(/[<>]/g,'').slice(0,18);authAvatar=r.user.avatar||'';authed=true;const g=await api('/save');raw=g.save?JSON.stringify(g.save):null;cloud(true);}
-  catch(e){authed=false;cloud(false);toast('Не удалось войти через сервер. Прогресс не сохранится.');}
+  catch(e){authed=false;cloud(false,'⚠ вход не удался: '+why(e));toast('Не удалось войти через сервер. Прогресс не сохранится.');}
   sb.disabled=false;sb.textContent='Начать охоту';
  }
  if(authed)load(raw===null?'null':raw);else load();
